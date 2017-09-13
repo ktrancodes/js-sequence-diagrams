@@ -154,6 +154,9 @@ _.extend(BaseTheme.prototype, {
 
     this.actorsHeight_  = 0;
     this.signalsHeight_ = 0;
+    this.currentSignalOffsetY = 0;
+    this.currentSignalIndex = 0;
+
     this.title_ = undefined; // hack - This should be somewhere better
   },
 
@@ -170,6 +173,22 @@ _.extend(BaseTheme.prototype, {
     this.drawTitle();
     this.drawActors(y);
     this.drawSignals(y + this.actorsHeight_);
+  },
+
+  drawBase: function(container) {
+    this.setupPaper(container);
+
+    this.layout();
+
+    var titleHeight = this.title_ ? this.title_.height : 0;
+    var y = DIAGRAM_MARGIN + titleHeight;
+
+    this.currentSignalOffsetY = y + this.actorsHeight_;
+    this.currentSignalIndex = 0;
+
+    this.drawTitle();
+    this.drawActors(y);
+    //this.drawSignals(this.currentSignalOffsetY);
   },
 
   layout: function() {
@@ -375,6 +394,26 @@ _.extend(BaseTheme.prototype, {
 
       y += s.height;
     }, this));
+  },
+
+  drawNextSignal: function() {
+    var y = this.currentSignalOffsetY;
+    var i = this.currentSignalIndex;
+    var s = this.diagram.signals[i];
+    if (s.type == 'Signal') {
+      if (s.isSelf()) {
+        this.drawSelfSignal(s, y);
+      } else {
+        this.drawSignal(s, y);
+      }
+
+    } else if (s.type == 'Note') {
+      this.drawNote(s, y);
+    }
+
+    this.currentSignalOffsetY += s.height;
+    this.currentSignalIndex++;  
+    return i == (this.diagram.signals.length - 1);
   },
 
   drawSelfSignal: function(signal, offsetY) {
