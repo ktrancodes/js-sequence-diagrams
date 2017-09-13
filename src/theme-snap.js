@@ -162,17 +162,45 @@ if (typeof Snap != 'undefined') {
     },
 
     createText: function(text, font) {
-      text = text.split('\n').map(function(x) {
-          return x.trim();
-      });
-      var t = this.paper_.text(0, 0, text);
-      t.attr(font || {});
-      if (text.length > 1) {
-        // Every row after the first, set tspan to be 1.2em below the previous line
-        t.selectAll('tspan:nth-child(n+2)').attr({
-          dy: '1.2em',
-          x: 0
+      var spans = [];
+      var lines = _.invoke(text.split('\n'), 'trim');
+      lines.forEach(function(line) {
+        line.split(/!/i).forEach(function(section) {
+          if(section.trim().length > 0) {
+            spans.push(section);
+          }
         });
+      });
+
+      var t = this.paper_.text(0, 0, spans);
+      t.attr(font || {});
+      var span_index = 1;
+      for (var i = 0 ; i < lines.length ; i++){
+        var sections = lines[i].split(/!/i);
+        var first = true;
+        for (var j = 0  ; j < sections.length ; j++) {
+          if(sections[j].trim().length == 0) {
+            continue;
+          }                   
+          if (i > 0 && first) {
+            t.selectAll('tspan:nth-child(' + span_index + ')').attr({
+              dy: '1.2em',
+            });
+          }
+          if (j % 2 == 1) {
+            t.selectAll('tspan:nth-child(' + span_index + ')').attr({
+              fill: 'red'
+            });
+          }
+          if (first) {
+            first = false;
+            t.selectAll('tspan:nth-child(' + span_index + ')').attr({
+              class: 'first',
+              x: 0
+            });
+          }
+          span_index++;
+        }
       }
 
       return t;
@@ -213,7 +241,7 @@ if (typeof Snap != 'undefined') {
       // Now move the text into place
       // `y - bb.y` because text(..) is positioned from the baseline, so this moves it down.
       t.attr({x: x - bb.x, y: y - bb.y});
-      t.selectAll('tspan').attr({x: x});
+      t.selectAll('tspan.first').attr({x: x});
 
       this.pushToStack(t);
       return t;
